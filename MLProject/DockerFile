@@ -1,0 +1,5 @@
+FROM python:3.10-slim
+RUN pip install mlflow pandas numpy scikit-learn
+WORKDIR /app
+COPY . /app
+ENTRYPOINT ["python", "modelling.py"]
