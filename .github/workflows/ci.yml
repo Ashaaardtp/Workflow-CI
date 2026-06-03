@@ -27,6 +27,12 @@ jobs:
         working-directory: ./MLProject
         run: python modelling.py
 
+      - name: Install Git LFS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-lfs
+          git lfs install
+
       - name: Save model to separate branch
         run: |
           git config user.name "github-actions[bot]"
