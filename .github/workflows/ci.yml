@@ -1,36 +1,31 @@
-name: MLflow Retraining CI
+name: CI with Docker Build (Advance)
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main, master ]
     paths:
-      - "MLProject/**"
+      - 'MLProject/**'
   workflow_dispatch:
 
 jobs:
-  retrain:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.10'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install mlflow
+        run: pip install mlflow pandas numpy scikit-learn
 
-      - name: Run MLflow Project
-        run: |
-          mlflow run MLProject/ --env-manager=local
+      - name: Run training
+        working-directory: ./MLProject
+        run: python modelling.py
 
       - name: Save model to separate branch
         run: |
@@ -39,7 +34,6 @@ jobs:
           MODEL_FILE=$(find MLProject/mlruns -name "model.pkl" | head -n 1)
           if [ -f "$MODEL_FILE" ]; then
             git checkout --orphan models
-            git rm -rf . >/dev/null 2>&1 || true
             mkdir -p saved_models
             cp "$MODEL_FILE" saved_models/model_$(date +'%Y%m%d_%H%M%S').pkl
             git add saved_models/
@@ -50,35 +44,37 @@ jobs:
           fi
         continue-on-error: true
 
-      - name: Upload MLflow artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: mlflow-artifacts
-          path: MLProject/mlruns/
-
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name:
-          Build and push Docker image using MLflow
+      - name: Find model path and build with mlflow
         run: |
           MODEL_PATH=$(find MLProject/mlruns -name "model" -type d | head -n 1)
           if [ -d "$MODEL_PATH" ]; then
-            mlflow models build-docker -m "$MODEL_PATH" -n "${{ secrets.DOCKER_USERNAME }}/california-housing:latest"
-            docker push "${{ secrets.DOCKER_USERNAME }}/california-housing:latest"
+            echo "Building Docker image using mlflow models build-docker"
+            mlflow models build-docker -m "$MODEL_PATH" -n ${{ secrets.DOCKER_USERNAME }}/california-housing --enable-mlserver
           else
-            echo "Model directory not found, skipping docker build"
+            echo "Model not found, using docker build fallback"
+            docker build -t ${{ secrets.DOCKER_USERNAME }}/california-housing:latest ./MLProject
           fi
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/california-housing:latest
+          docker tag ${{ secrets.DOCKER_USERNAME }}/california-housing:latest ${{ secrets.DOCKER_USERNAME }}/california-housing:${{ github.run_id }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/california-housing:${{ github.run_id }}
 
       - name: Save Docker Hub link
         run: |
-          echo "https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/california-housing" > MLProject/Tautan_ke_Docker_Hub.txt
+          echo "https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/california-housing" > MLProject/tautan_docker_hub.txt
 
-      - name: Upload Docker link as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-link
-          path: MLProject/Tautan_ke_Docker_Hub.txt
+      - name: Commit Docker link
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add MLProject/tautan_docker_hub.txt
+          git diff --cached --quiet || git commit -m "Update Docker Hub link [skip ci]"
+          git push
