@@ -1,1 +1,1 @@
-https://hub.docker.com/repository/docker/ashaaardtp/eksperimen-msml/general
+https://hub.docker.com/repository/docker/ashaaardtp/california-housing/general
