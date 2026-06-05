@@ -25,6 +25,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install mlflow pandas numpy scikit-learn
+<<<<<<< HEAD
 
       - name: Debug MLflow setup
         run: |
@@ -37,6 +38,12 @@ jobs:
           export MLFLOW_TRACKING_URI=sqlite:///mlflow.db
           mlflow run . --env-manager=local -e main
           cd ..
+=======
+
+      - name: Run MLflow Project
+        run: |
+          mlflow run MLProject/ --env-manager=local
+>>>>>>> c5cf2e900737585ae90bd47912215b2718421c89
 
       - name: Save model to separate branch (skilled)
         run: |
@@ -61,4 +68,7 @@ jobs:
         with:
           name: mlflow-artifacts
           path: MLProject/mlruns/
+<<<<<<< HEAD
         continue-on-error: true
+=======
+>>>>>>> c5cf2e900737585ae90bd47912215b2718421c89
