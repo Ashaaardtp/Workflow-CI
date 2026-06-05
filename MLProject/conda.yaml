@@ -1,12 +1,8 @@
-name: mlflow-env
-channels:
-  - conda-forge
-  - defaults
-dependencies:
-  - python=3.10
-  - pip
-  - pip:
-    - pandas
-    - numpy
-    - scikit-learn
-    - mlflow
+name: CaliforniaHousingRetraining
+conda_env: conda.yaml
+entry_points:
+  main:
+    command: "python modelling.py"
+    parameters:
+      random_state: {type: int, default: 42}
+      n_estimators: {type: int, default: 100}
