@@ -35,7 +35,7 @@ jobs:
         run: |
           cd MLProject
           export MLFLOW_TRACKING_URI=sqlite:///mlflow.db
-          mlflow run . --env-manager=local -e main
+          mlflow run . --env-manager=local -e main --experiment-name CI_Retraining
           cd ..
 
       - name: Save model to separate branch (skilled)

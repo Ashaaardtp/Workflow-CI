@@ -9,11 +9,6 @@ import sys
 
 def main():
     try:
-        # Set up MLflow tracking
-        mlflow.set_tracking_uri("sqlite:///mlflow.db")
-        mlflow.set_experiment("CI_Retraining")
-        
-        # Load data
         data_dir = "california_housing_preprocessed"
         if not os.path.exists(data_dir):
             print(f"Error: Data directory '{data_dir}' not found")
@@ -31,38 +26,30 @@ def main():
         print(f"y_train shape: {y_train.shape}")
         print(f"y_test shape: {y_test.shape}")
         
-        # Start MLflow run
         with mlflow.start_run(run_name="CI_Run") as run:
             print(f"MLflow run ID: {run.info.run_id}")
             
-            # Enable autolog
             mlflow.sklearn.autolog()
             
-            # Train model
             print("Training RandomForestRegressor...")
             model = RandomForestRegressor(n_estimators=100, random_state=42)
             model.fit(X_train, y_train)
             
-            # Make predictions
             y_pred = model.predict(X_test)
             
-            # Calculate metrics
             rmse = np.sqrt(mean_squared_error(y_test, y_pred))
             mae = mean_absolute_error(y_test, y_pred)
             r2 = r2_score(y_test, y_pred)
             
             print(f"RMSE: {rmse:.2f}, MAE: {mae:.2f}, R2: {r2:.2f}")
             
-            # Log metrics manually
             mlflow.log_metric("rmse", rmse)
             mlflow.log_metric("mae", mae)
             mlflow.log_metric("r2", r2)
             
-            # Log parameters
             mlflow.log_param("n_estimators", 100)
             mlflow.log_param("random_state", 42)
             
-            # Log model
             mlflow.sklearn.log_model(model, "model")
             
             print(f"Model logged successfully to MLflow")
