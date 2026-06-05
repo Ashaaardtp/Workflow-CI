@@ -3,3 +3,10 @@ conda_env: conda.yaml
 entry_points:
   main:
     command: "python modelling.py"
+    parameters:
+      - name: random_state
+        type: int
+        default: 42
+      - name: n_estimators
+        type: int
+        default: 100
